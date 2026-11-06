@@ -1,0 +1,42 @@
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    ECR_REPOSITORY_URI: "760697107478.dkr.ecr.us-east-1.amazonaws.com/docker-release-app"
+
+phases:
+  install:
+    commands:
+      - echo "Installing Python dependencies..."
+      - python -m pip install -r requirements.txt
+
+  pre_build:
+    commands:
+      - echo "Running automated tests..."
+      - python -m pytest -v
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 760697107478.dkr.ecr.us-east-1.amazonaws.com
+
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - COMMIT_SHA="${CODEBUILD_RESOLVED_SOURCE_VERSION:?Source revision is missing}"
+      - IMAGE_TAG="${COMMIT_SHA}-${CODEBUILD_BUILD_NUMBER:?Build number is missing}"
+      - IMAGE_URI="${ECR_REPOSITORY_URI}:${IMAGE_TAG}"
+      - docker build -t "$IMAGE_URI" .
+      - echo "Pushing Docker image to ECR..."
+      - docker push "$IMAGE_URI"
+
+  post_build:
+    commands:
+      - echo "Creating ECS deployment artifact..."
+      - |
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]; then
+          printf '[{"name":"web","imageUri":"%s"}]' "$IMAGE_URI" > imagedefinitions.json
+          cat imagedefinitions.json
+        fi
+
+artifacts:
+  files:
+    - imagedefinitions.json
