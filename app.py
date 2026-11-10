@@ -7,7 +7,7 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return jsonify({
-        "message": "Hello from AWS ECS Fargate!",
+        "message": "CI/CD automatic deployment SUCCESS!",
         "status": "running"
     })
 
