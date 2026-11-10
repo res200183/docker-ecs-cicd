@@ -33,7 +33,7 @@ phases:
       - echo "Creating ECS deployment artifact..."
       - |
         if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]; then
-          printf '[{"name":"web","imageUri":"%s"}]' "$IMAGE_URI" > imagedefinitions.json
+          printf '[{"name":"docker-release-container","imageUri":"%s"}]' "$IMAGE_URI" > imagedefinitions.json
           cat imagedefinitions.json
         fi
 
